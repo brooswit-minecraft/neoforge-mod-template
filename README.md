@@ -31,7 +31,9 @@ them in. This repo's own CI instead instantiates a sample mod and builds
 
 1. Confirm the repo name is free, then create the new (empty) GitHub repo,
    e.g. `gh repo create brooswit-minecraft/dynamic-widgets --public`, and
-   clone it locally into an empty directory.
+   clone it locally — the clone will contain only `.git`, which
+   `instantiate.py` tolerates for exactly this flow (any other existing
+   content in the target directory is refused).
 2. From a checkout of this template repo, run:
 
    ```sh

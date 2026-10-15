@@ -9,5 +9,8 @@ in each `changelog.d/` fragment (see `changelog.d/README.md`).
 - `minor`: a new feature, block, or API surface.
 - `patch`: a fix or internal change with no new surface.
 
-Do not add dated `## [x.y.z]` headings or edit `version=` in
-`gradle.properties` by hand; the release workflow does both.
+The shipped version lives in git tags (`vX.Y.Z`) and GitHub Releases, not in
+this file or in `gradle.properties`'s `version=` (which stays `0.0.0` and is
+only overridden at build time via `-Pmod_version=...`). Do not add dated
+`## [x.y.z]` headings here or edit `version=` by hand — the release workflow
+does neither; see the repo's GitHub Releases page for what actually shipped.

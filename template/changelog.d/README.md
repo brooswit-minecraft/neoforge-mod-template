@@ -8,12 +8,18 @@ same file — nothing to rebase away, no discarded approvals. Do **not** append
 to a shared `## [Unreleased]` section instead; that reintroduces the exact
 conflict this scheme exists to remove.
 
-The release workflow collates every fragment present on the base branch at
-merge time, computes the version from their declared bump levels, writes it
-into the version file and a dated `## [x.y.z] - YYYY-MM-DD` heading in
-`CHANGELOG.md`, and deletes the fragments it consumed. **Do not** bump the
-version file or add a dated CHANGELOG heading yourself — the release gate
-rejects both.
+The PR-time `release-gate` CI check only validates that a gated PR added a
+fragment and that its `bump:`/`### BREAKING` rules are consistent — it does
+not write anything. Separately, `.github/workflows/release.yml` runs on
+every push to `main`: it looks for fragments added since the latest
+`vX.Y.Z` git tag reachable from that commit, computes the next version from
+their highest `bump:` level, and tags + publishes a GitHub release. It does
+**not** bump `version=` in `gradle.properties`, does **not** add a dated
+heading to `CHANGELOG.md`, and does **not** delete the fragments —
+fragments simply accumulate in git history; the tag is the record of what
+has already shipped, not the fragment set. **Do not** bump the version file
+or add a dated CHANGELOG heading yourself — nothing in this workflow reads
+either, and the release's actual notes come from the fragments themselves.
 
 ## Format
 

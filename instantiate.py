@@ -6,9 +6,10 @@ Usage:
         --name "Dynamic Widgets" --description "Widgets that do a thing." \
         [--jira-key MINECRAFT-999]
 
-<target-dir> should be an empty (or non-existent) directory -- typically a
-fresh `git clone` of the new, empty GitHub repo. This script only writes
-files; it does not touch git or GitHub.
+<target-dir> should be an empty (or non-existent) directory, or a fresh
+`git clone` of the new, empty GitHub repo (which contains only `.git` --
+that's the one entry this script tolerates). Any other existing content is
+refused. This script only writes files; it does not touch git or GitHub.
 
 Placeholders replaced across every text file under template/:
     __MOD_SLUG__         kebab-case repo name, e.g. "dynamic-widgets"
@@ -29,6 +30,9 @@ from pathlib import Path
 TEMPLATE_DIR = Path(__file__).resolve().parent / "template"
 
 SLUG_RE = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
+# NeoForge's own mod_id constraint (see gradle.properties' mod_id comment):
+# must fit [a-z][a-z0-9_]{1,63}, i.e. 2-64 characters total.
+MOD_ID_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 
 
 def derive_mod_id(slug):
@@ -50,6 +54,16 @@ def instantiate(target_dir, slug, name, description, jira_key=None):
         raise SystemExit(f"--slug must be kebab-case (e.g. dynamic-widgets), got: {slug!r}")
 
     mod_id = derive_mod_id(slug)
+    if not MOD_ID_RE.match(mod_id):
+        raise SystemExit(
+            f"--slug {slug!r} derives mod_id {mod_id!r} ({len(mod_id)} chars), "
+            "which must be 2-64 chars matching [a-z][a-z0-9_]{1,63} -- NeoForge's own mod_id constraint"
+        )
+    if '"' in name:
+        raise SystemExit("--name must not contain a double-quote character (it is embedded in a quoted TOML string)")
+    if "'''" in description:
+        raise SystemExit("--description must not contain the sequence ''' (it is embedded in a triple-quoted TOML string)")
+
     mod_class = derive_mod_class(slug)
     placeholders = {
         "__MOD_SLUG__": slug,
@@ -61,8 +75,9 @@ def instantiate(target_dir, slug, name, description, jira_key=None):
 
     target_dir = Path(target_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
-    if any(target_dir.iterdir()):
-        raise SystemExit(f"{target_dir} is not empty; instantiate into a fresh clone of the new repo")
+    existing = [p for p in target_dir.iterdir() if p.name != ".git"]
+    if existing:
+        raise SystemExit(f"{target_dir} is not empty (beyond .git); instantiate into a fresh clone of the new repo")
 
     for src in TEMPLATE_DIR.rglob("*"):
         rel = src.relative_to(TEMPLATE_DIR)
