@@ -28,9 +28,6 @@ from pathlib import Path
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "template"
 
-# Files whose bytes must never be treated as text (binary copy only).
-BINARY_SUFFIXES = {".jar", ".png"}
-
 SLUG_RE = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 
 
@@ -75,10 +72,12 @@ def instantiate(target_dir, slug, name, description, jira_key=None):
             dest.mkdir(parents=True, exist_ok=True)
             continue
         dest.parent.mkdir(parents=True, exist_ok=True)
-        if src.suffix in BINARY_SUFFIXES:
-            shutil.copyfile(src, dest)
+        raw = src.read_bytes()
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            dest.write_bytes(raw)
         else:
-            text = src.read_text(encoding="utf-8")
             dest.write_text(replace_placeholders(text, placeholders), encoding="utf-8")
         shutil.copymode(src, dest)
 
